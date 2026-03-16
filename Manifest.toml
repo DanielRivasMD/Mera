@@ -34,7 +34,7 @@ uuid = "94ce4f54-9a6c-5748-9c1c-f9c7231a4531"
 version = "1.18.0+0"
 
 [[deps.Mera]]
-deps = ["TOML"]
+deps = ["TOML", "YAML"]
 path = "."
 uuid = "a56ba03c-deb4-47e0-a4fd-023665e4a7fb"
 version = "0.1.0"
