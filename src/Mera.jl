@@ -9,8 +9,10 @@ using YAML
 
 ####################################################################################################
 
-export Mera, load, set_default!, load_default!, path, set_base!, ensure, mirror
+export Mera, load, set_base!, set_default!, load_default!, path, ensure, mirror
 
+####################################################################################################
+# Data structures
 ####################################################################################################
 
 """
@@ -24,8 +26,6 @@ struct RelTree
   relpath::String
   children::Dict{String,RelTree}
 end
-
-####################################################################################################
 
 """
     Mera
@@ -41,8 +41,21 @@ struct Mera
   config_path::String
 end
 
+"""
+    PathNode
+
+A helper type to enable dot‑syntax navigation of the directory tree.
+It stores a reference to the parent `Mera`, the root name, and the
+list of segments traversed so far.
+"""
+struct PathNode
+  mera::Mera
+  root::Symbol
+  segments::Vector{String}
+end
+
 ####################################################################################################
-# Internal: build a RelTree from a parsed configuration dictionary.
+# Internal tree building
 ####################################################################################################
 
 function _build_tree(node::Dict, parent_relpath::String)::RelTree
@@ -110,7 +123,76 @@ function set_base!(mera::Mera, root::Symbol, base::String)
 end
 
 ####################################################################################################
-# Path resolution
+# Dot syntax support
+####################################################################################################
+
+function Base.getproperty(m::Mera, name::Symbol)
+  # Access roots field without triggering getproperty again
+  roots = getfield(m, :roots)
+  if haskey(roots, name)
+    return PathNode(m, name, [])
+  else
+    # Fall back to normal field access
+    return getfield(m, name)
+  end
+end
+
+function Base.getproperty(node::PathNode, name::Symbol)
+  # Verify that the requested child exists in the actual tree
+  tree = getfield(node, :mera).roots[getfield(node, :root)]
+  for seg in getfield(node, :segments)
+    tree = tree.children[seg]
+  end
+  child_name = String(name)
+  if haskey(tree.children, child_name)
+    # Child exists - return a new PathNode with the additional segment
+    return PathNode(
+      getfield(node, :mera),
+      getfield(node, :root),
+      [getfield(node, :segments); child_name],
+    )
+  else
+    throw(
+      ArgumentError(
+        "No child named '$name' under path '$(join(getfield(node, :segments), "."))' for root '$(getfield(node, :root))'",
+      ),
+    )
+  end
+end
+
+"""
+    (node::PathNode)() -> String
+
+Return the absolute path corresponding to this `PathNode`.
+The root's base path must have been set with `set_base!`.
+"""
+function (node::PathNode)()
+  if !haskey(getfield(node, :mera).bases, getfield(node, :root))
+    throw(
+      ArgumentError(
+        "Base path not set for root '$(getfield(node, :root))'. Use set_base! first.",
+      ),
+    )
+  end
+  base = getfield(node, :mera).bases[getfield(node, :root)]
+  # Join the segments using the filesystem separator
+  return joinpath(base, join(getfield(node, :segments), "/"))
+end
+
+# pretty printing for PathNode
+function Base.show(io::IO, node::PathNode)
+  print(
+    io,
+    "PathNode(:",
+    getfield(node, :root),
+    ", [\"",
+    join(getfield(node, :segments), "\", \""),
+    "\"])",
+  )
+end
+
+####################################################################################################
+# Path resolution (traditional API)
 ####################################################################################################
 
 """
@@ -264,6 +346,32 @@ function mirror(mera::Mera, src_root::Symbol, dst_root::Symbol)
   src_base = mera.bases[src_root]
   dst_base = mera.bases[dst_root]
   _mirror_tree(mera.roots[src_root], src_base, dst_base)
+end
+
+####################################################################################################
+# Pretty display for Mera and RelTree
+####################################################################################################
+
+function Base.show(io::IO, tree::RelTree)
+  println(io, "", tree.relpath == "" ? "." : tree.relpath)
+  _print_tree(io, tree, "  ")
+end
+
+function _print_tree(io::IO, tree::RelTree, indent)
+  for name in sort(collect(keys(tree.children)))
+    child = tree.children[name]
+    println(io, indent, "├─ ", name)
+    _print_tree(io, child, indent * "   ")
+  end
+end
+
+function Base.show(io::IO, m::Mera)
+  println(io, "Mera project with roots:")
+  for (root, tree) in m.roots
+    println(io, "  :$root →")
+    show(io, tree)
+  end
+  println(io, "Bases set: ", join(keys(m.bases), ", "))
 end
 
 ####################################################################################################
