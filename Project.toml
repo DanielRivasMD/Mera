@@ -2,3 +2,11 @@ name = "Mera"
 uuid = "a56ba03c-deb4-47e0-a4fd-023665e4a7fb"
 version = "0.1.0"
 authors = ["Daniel Rivas <danielrivasmd@gmail.com>"]
+
+[deps]
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
+
+[compat]
+TOML = "1.0.3"
+YAML = "0.4.16"
