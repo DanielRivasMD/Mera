@@ -47,6 +47,11 @@ end
 A helper type to enable dot‑syntax navigation of the directory tree.
 It stores a reference to the parent `Mera`, the root name, and the
 list of segments traversed so far.
+
+mera = load("paths.toml")
+set_base!(mera, :data, "/home/user/project")
+mera.data.orig.csv() # returns "/home/user/project/orig/csv"
+
 """
 struct PathNode
   mera::Mera
@@ -79,12 +84,24 @@ end
 """
     load(config_file::String; bases::Dict{Symbol,String}=Dict{Symbol,String}()) -> Mera
 
+
+# Description
 Parse a TOML or YAML configuration file and return a `Mera` instance.
 The file must contain top‑level tables, each representing a root directory.
 Each table may have a `"children"` list and corresponding subtables.
 
 Optionally provide a dictionary of base paths for some or all roots.
 Use `set_base!` later to add or change base paths.
+
+# Examples
+```
+julia> mera = load("paths.toml")
+Example 1: Load from a TOML file.
+mera = load("paths.toml")
+
+Example 2: Load from a YAML file with an initial base path for root :data.
+mera = load("paths.yaml"; bases = Dict(:data => "/home/user/project"))
+```
 """
 function load(config_file::String; bases::Dict{Symbol,String} = Dict{Symbol,String}())
   ext = splitext(config_file)[2]
@@ -116,6 +133,9 @@ end
     set_base!(mera::Mera, root::Symbol, base::String)
 
 Set or change the absolute base path for a given root.
+mera = load("paths.toml")
+set_base!(mera, :data, "/home/user/project/data")
+set_base!(mera, :output, "/home/user/project/results")
 """
 function set_base!(mera::Mera, root::Symbol, base::String)
   mera.bases[root] = base
@@ -200,6 +220,11 @@ end
 
 Return the absolute path for a directory identified by a dot‑separated key
 relative to the given root. The root must have its base path set.
+
+mera = load("paths.toml")
+set_base!(mera, :data, "/home/user/project")
+path(mera, :data, "orig.hmgcr.csv") # "/home/user/project/orig/hmgcr/csv"
+
 """
 function path(mera::Mera, root::Symbol, key::String)
   if !haskey(mera.roots, root)
@@ -224,6 +249,11 @@ end
 
 Return the absolute path for a key that includes the root name as its first component,
 e.g. `"data.orig.hmgcr.csv"`.
+
+mera = load("paths.toml")
+set_base!(mera, :data, "/home/user/project")
+path(mera, "data.orig.hmgcr.csv") # same as above
+
 """
 function path(mera::Mera, key::String)
   parts = split(key, '.')
@@ -245,6 +275,11 @@ const DEFAULT = Ref{Mera}()
     set_default!(mera::Mera)
 
 Set the global default `Mera` instance used by the single‑argument `path` function.
+
+mera = load("paths.toml")
+set_default!(mera)
+path("data.orig.csv") # uses the default instance's bases
+
 """
 function set_default!(mera::Mera)
   DEFAULT[] = mera
@@ -256,6 +291,10 @@ end
 
 Load a configuration and set it as the global default.
 Equivalent to `set_default!(load(config_file; bases=bases))`.
+
+load_default!("paths.toml"; bases = Dict(:data => "/home/user/project"))
+path("data.orig.csv") # works immediately
+
 """
 function load_default!(
   config_file::String;
@@ -271,6 +310,10 @@ end
 
 Return the absolute path using the global default `Mera` instance.
 Throws an error if no default has been set.
+
+load_default!("paths.toml"; bases = Dict(:data => "/home/user/project"))
+path("data.cache.temp") # "/home/user/project/cache/temp"
+
 """
 function path(key::String)
   if !isassigned(DEFAULT)
@@ -295,6 +338,11 @@ end
     ensure(mera::Mera, root::Symbol)
 
 Create all directories for the given root (base path must be set).
+
+mera = load("paths.toml")
+set_base!(mera, :data, "/home/user/project/data")
+ensure(mera, :data) # creates data/, data/cache/, data/orig/, etc.
+
 """
 function ensure(mera::Mera, root::Symbol)
   if !haskey(mera.bases, root)
@@ -308,6 +356,12 @@ end
     ensure(mera::Mera)
 
 Create directories for all roots that have a base path set.
+
+mera = load("paths.toml")
+set_base!(mera, :data, "/home/user/project/data")
+set_base!(mera, :output, "/home/user/project/results")
+ensure(mera) # creates all directories for both roots
+
 """
 function ensure(mera::Mera)
   for root in keys(mera.roots)
@@ -338,6 +392,12 @@ end
 
 Recreate the directory tree of `src_root` under `dst_root`.
 Both roots must have their base paths set.
+
+mera = load("paths.toml")
+set_base!(mera, :data, "/home/user/project/data")
+set_base!(mera, :backup, "/mnt/backup/data")
+mirror(mera, :data, :backup) # creates same subdirs under backup/
+
 """
 function mirror(mera::Mera, src_root::Symbol, dst_root::Symbol)
   if !haskey(mera.bases, src_root) || !haskey(mera.bases, dst_root)
