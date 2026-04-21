@@ -1,6 +1,6 @@
 add readme
 add function to read paths & output yml
-
+integrate mera with avicenna cli | build mera cli
 
 ==================================================
 ==================================================
