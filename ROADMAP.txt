@@ -1,6 +1,11 @@
 add readme
 add function to read paths & output yml
-integrate mera with avicenna cli | build mera cli
+build mera cli
+update mera entry point to hold a .mera.yml as default value
+mera should be able to load file names as well, for example: const data_csv_file.csv
+read .mera.yml by default from cli & from repl
+
+
 
 ==================================================
 ==================================================
