@@ -1,11 +1,39 @@
 add readme
 add function to read paths & output yml
-build mera cli
 update mera entry point to hold a .mera.yml as default value
 mera should be able to load file names as well, for example: const data_csv_file.csv
 read .mera.yml by default from cli & from repl
+build mera cli
+	using Mera
+	ensure(Mera.load())
 
 
+enhancements:
+- tempating & copying
+- enviroment variable interpolation
+- relative root resolution
+- integration with FilePathsBase.jl
+- listing & visualization
+- multi config merge
+
+usefulness:
+- lightweight project scaffolding
+- ergonomic functions
+
+strengths:
+- clean data model (tree)
+- ergonomic dot syntax
+- flexible input (yaml & toml)
+- global default
+- clever utilities (ensure & mirror)
+- explicit internal field access
+
+weaknesses:
+- lack of file support => PRIORITY
+- inefficient path navigation => cache
+- heavy reliance on dot syntax
+- no validation on config semantics
+- base path warning only
 
 ==================================================
 ==================================================
