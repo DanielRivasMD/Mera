@@ -1,5 +1,6 @@
 add readme
 add function to read paths & output yml
+integrate mera with shell => given a mera config, create a shell compatible file config
 mera should be able to load file names as well, for example: const data_csv_file.csv
 build mera cli
 	using Mera
