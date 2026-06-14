@@ -1,10 +1,13 @@
 add readme
 add function to read paths & output yml
-integrate mera with shell => given a mera config, create a shell compatible file config
-mera should be able to load file names as well, for example: const data_csv_file.csv
+integrate mera with shell => given a mera config, create a shell compatible file config => best alternative to wrap a pre-compiled version and call from shell
+```
 build mera cli
 	using Mera
 	ensure(Mera.load())
+```
+
+mera should be able to load file names as well, for example: const data_csv_file.csv
 
 read .mera.yml by default from cli & from repl => how about creating .mera/ and files names as stems, eg, root.yml
 or find an alternative for branches & mirroing
